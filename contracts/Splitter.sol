@@ -63,8 +63,8 @@ contract Splitter is Owned {
   function split() payable returns (bool successful){
     if (msg.value == 0) throw;
     if (killed == true) throw;
-    uint split = msg.value/2;
-    if (split + split != msg.value) throw;
+    uint split = (msg.value/2);
+    if ((split + split) != msg.value) throw;
     if (!bob.send(msg.value / 2)) throw;
     if (!carol.send(msg.value / 2)) throw;
     bobBalance = bob.balance;

@@ -83,25 +83,53 @@ contract('Splitter', function(accounts) {
     var blockNumber;
 
     return splitter.kill.call({}, { from: accounts[0] })
-	    .then(function(successful) {
-	      assert.isTrue(successful, "should be possible to kill the contract");
-	      blockNumber = web3.eth.blockNumber + 1;
-	      return splitter.kill({}, { from: accounts[0] });
-	    })
+      .then(function(successful) {
+        assert.isTrue(successful, "should be possible to kill the contract");
+        blockNumber = web3.eth.blockNumber + 1;
+        return splitter.kill({}, { from: accounts[0] });
+      })
       .then(function(tx) {
-	    	return Promise.all([
-	    		getEventsPromise(splitter.LogSender(
-	    			{},
-	    			{ fromBlock: blockNumber, toBlock: "latest" })),
-	    		web3.eth.getTransactionReceiptMined(tx)
-    		]);
-	    })
+        return Promise.all([
+          getEventsPromise(splitter.LogSender(
+            {},
+            { fromBlock: blockNumber, toBlock: "latest" })),
+          web3.eth.getTransactionReceiptMined(tx)
+        ]);
+      })
       .then(function (eventAndReceipt) {
-	    	var eventArgs = eventAndReceipt[0][0].args;
+        var eventArgs = eventAndReceipt[0][0].args;
         return splitter.isKilled();
-	    })
+      })
       .then(function(killed) {
         assert.isTrue(killed, "should be killed");
+      })
+
+  });
+
+ it("should unkill if owner", function() {
+    var splitter = Splitter.deployed();
+    var blockNumber;
+
+    return splitter.unkill.call({}, { from: accounts[0] })
+      .then(function(successful) {
+        assert.isTrue(successful, "should be possible to kill the contract");
+        blockNumber = web3.eth.blockNumber + 1;
+        return splitter.unkill({}, { from: accounts[0] });
+      })
+      .then(function(tx) {
+        return Promise.all([
+          getEventsPromise(splitter.LogSender(
+            {},
+            { fromBlock: blockNumber, toBlock: "latest" })),
+          web3.eth.getTransactionReceiptMined(tx)
+        ]);
+      })
+      .then(function (eventAndReceipt) {
+        var eventArgs = eventAndReceipt[0][0].args;
+        return splitter.isKilled();
+      })
+      .then(function(killed) {
+        assert.isFalse(killed, "should be killed");
       })
 
   });
@@ -133,12 +161,13 @@ contract('Splitter', function(accounts) {
       });
   });
 
-  it("should be possible to send some value", function() {
+  it("should be possible to send some value divided by 2", function() {
     var splitter = Splitter.deployed();
     var blockNumber;
 
     return splitter.split.call({}, {from: accounts[0], value: 500} )
       .then(function(successful){
+        console.log(successful);
         assert.isTrue(successful, "should be possible to send some balance");
         blockNumber = web3.eth.blockNumber + 1;
         return splitter.split({}, {from: accounts[0], value: 500} )
@@ -155,5 +184,16 @@ contract('Splitter', function(accounts) {
 	    	var eventArgs = eventAndReceipt[0][0].args;
 	    	assert.equal(eventArgs.bobValue.valueOf(), eventArgs.bobValue.valueOf(), "should be the the same value");
 	    })
+    });
+
+  it("shouldnt be possible to send some value divided by 2", function() {
+    var splitter = Splitter.deployed();
+    var blockNumber;
+    return expectedExceptionPromise(function () {
+      return splitter.split.call(
+          {}, 
+          { from: accounts[0], value: 9, gas: 3000000 });     
+        },
+        3000000);
     });
 });
